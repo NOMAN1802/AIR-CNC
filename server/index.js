@@ -88,6 +88,7 @@ const sendMail = (emailData, emailAddress) =>{
 
 async function run() {
   try {
+    
     const usersCollection = client.db('aircncDb').collection('users')
     const roomsCollection = client.db('aircncDb').collection('rooms')
     const bookingsCollection = client.db('aircncDb').collection('bookings')
