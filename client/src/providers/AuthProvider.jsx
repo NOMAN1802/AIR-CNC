@@ -11,6 +11,8 @@ import {
   updateProfile,
 } from 'firebase/auth'
 import { app } from '../firebase/firebase.config'
+import { getRole } from '../api/auth'
+import axios from 'axios'
 
 export const AuthContext = createContext(null)
 
@@ -19,7 +21,15 @@ const googleProvider = new GoogleAuthProvider()
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
+  const [role, setRole] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  useEffect(()=>{
+    if(user){
+      getRole(user.email)
+      .then(data => setRole(data))
+    }
+  },[user])
 
   const createUser = (email, password) => {
     setLoading(true)
@@ -43,6 +53,7 @@ const AuthProvider = ({ children }) => {
 
   const logOut = () => {
     setLoading(true)
+    localStorage.removeItem('access-token')
     return signOut(auth)
   }
 
@@ -56,6 +67,28 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, currentUser => {
       setUser(currentUser)
+      if(currentUser){
+        // fetch(`${import.meta.env.VITE_API_URL}/jwt`,{
+        //   method: 'POST',
+        //   headers: {
+        //     'content-type': 'application/json',
+        //   },
+        //   body: JSON.stringify({ email: currentUser.email})
+        // }).then(res => res.json()).then(data =>{
+        //   localStorage.setItem('access-token', data.token)
+        //   console.log(data);
+        // })
+        axios.post(`${import.meta.env.VITE_API_URL}/jwt`,{    
+           email: currentUser?.email,
+        }).then(data => {
+          localStorage.setItem('access-token', data.data.token)
+          console.log(data.data.token)
+           setLoading(false)
+        })
+      }
+      else{
+        localStorage.removeItem('access-token')
+      }
       console.log('current user', currentUser)
       setLoading(false)
     })
@@ -74,6 +107,8 @@ const AuthProvider = ({ children }) => {
     resetPassword,
     logOut,
     updateUserProfile,
+    role,
+    setRole
   }
 
   return (
